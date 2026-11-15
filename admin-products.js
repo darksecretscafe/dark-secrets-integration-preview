@@ -92,7 +92,7 @@
 
       const status = element(
         'span',
-        product.is_active ? 'Active' : 'Inactive',
+        product.is_active ? 'Available' : 'Unavailable',
         'ds-product-status' + (product.is_active ? '' : ' inactive')
       );
 
@@ -104,9 +104,10 @@
 
       const toggle = element(
         'button',
-        product.is_active ? 'Deactivate' : 'Activate',
+        product.is_active ? 'Mark Unavailable' : 'Mark Available',
         'ghost'
       );
+
       toggle.type = 'button';
       toggle.onclick = () => changeAvailability(product, toggle);
 
@@ -159,7 +160,7 @@
     const price = field(
       'Price (₱)',
       'number',
-      product?.price || ''
+      product?.price ?? ''
     );
     price.input.min = '0.01';
     price.input.max = '99999.99';
@@ -182,7 +183,10 @@
     const oatCheckbox = document.createElement('input');
     oatCheckbox.type = 'checkbox';
     oatCheckbox.checked = product?.oat_eligible === true;
-    oatLabel.append(oatCheckbox, document.createTextNode(' Oat Milk Eligible (+₱30)'));
+    oatLabel.append(
+      oatCheckbox,
+      document.createTextNode(' Oat Milk Eligible (+₱30)')
+    );
 
     const actions = element('div', undefined, 'ds-product-form-actions');
 
@@ -273,7 +277,7 @@
             .from('products')
             .insert({
               ...values,
-              is_active: true
+              is_active: false
             })
             .select('id');
         }
@@ -299,9 +303,9 @@
     if (saving) return;
 
     const next = !product.is_active;
-    const action = next ? 'Activate' : 'Deactivate';
+    const action = next ? 'Mark Available' : 'Mark Unavailable';
 
-    if (!confirm(`${action} "${product.name}"?`)) return;
+    if (!confirm(`${action}: "${product.name}"?`)) return;
 
     saving = true;
     button.disabled = true;
