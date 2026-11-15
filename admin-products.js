@@ -276,9 +276,9 @@
           result = await db
             .from('products')
             .insert({
-              ...values,
-              is_active: false
-            })
+  ...values,
+  is_active: true
+})
             .select('id');
         }
 
