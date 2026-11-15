@@ -170,9 +170,11 @@ document.querySelectorAll('[data-custom-close]').forEach(
   el => el.addEventListener('click', closeCustomizer)
 );
 
+// Step 84.155 FIX:
+// Keep quantities when switching oat milk on or off.
 customOat.addEventListener('change', () => {
   customError.textContent = '';
-  loadCustomizerQuantities();
+  refreshCustomizer();
 });
 
 for (const [id, kind, delta] of [
@@ -893,7 +895,7 @@ function showSavedConfirmation(orderNumber, trackingToken) {
         <span>
           ${i.qty}× ${esc(i.name)}
           <small class="summary-addon">
-            <br>↳ ${esc(i.packaging)}
+            ↳ ${esc(i.packaging)}
             ${i.oatMilk ? ' · Sub Oat Milk' : ''}
           </small>
         </span>
