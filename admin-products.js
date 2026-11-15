@@ -9,6 +9,7 @@
   if (!root || !addButton || !formContainer) return;
 
   const db = window.DS_adminDb;
+
   if (!db) {
     root.textContent = 'Admin connection unavailable.';
     return;
@@ -52,13 +53,16 @@
 
       const { data, error } = await db
         .from('products')
-        .select('id,name,price,category,is_active,oat_eligible')
-        .order('name');
+        .select(
+          'id,product_code,name,price,category,is_active,oat_eligible'
+        )
+        .order('product_code');
 
       if (error) throw error;
 
       products = data || [];
       renderProducts();
+
     } catch (error) {
       root.textContent = 'Could not load products: ' + error.message;
     }
@@ -76,7 +80,14 @@
 
     for (const product of products) {
       const card = element('article', undefined, 'ds-product-card');
+
       const name = element('strong', product.name);
+
+      const code = element(
+        'span',
+        product.product_code || 'No Product Code',
+        'ds-product-code'
+      );
 
       const detail = element(
         'span',
@@ -96,7 +107,11 @@
         'ds-product-status' + (product.is_active ? '' : ' inactive')
       );
 
-      const actions = element('div', undefined, 'ds-product-actions');
+      const actions = element(
+        'div',
+        undefined,
+        'ds-product-actions'
+      );
 
       const edit = element('button', 'Edit', 'ghost');
       edit.type = 'button';
@@ -112,7 +127,16 @@
       toggle.onclick = () => changeAvailability(product, toggle);
 
       actions.append(edit, toggle);
-      card.append(name, detail, oatStatus, status, actions);
+
+      card.append(
+        name,
+        code,
+        detail,
+        oatStatus,
+        status,
+        actions
+      );
+
       list.append(card);
     }
 
@@ -155,6 +179,7 @@
       'text',
       product?.name || ''
     );
+
     name.input.maxLength = 80;
 
     const price = field(
@@ -162,6 +187,7 @@
       'number',
       product?.price ?? ''
     );
+
     price.input.min = '0.01';
     price.input.max = '99999.99';
     price.input.step = '0.01';
@@ -179,31 +205,48 @@
     category.value = product?.category || 'Coffee';
     categoryLabel.append(category);
 
-    const oatLabel = element('label', undefined, 'ds-product-oat-label');
+    const oatLabel = element(
+      'label',
+      undefined,
+      'ds-product-oat-label'
+    );
+
     const oatCheckbox = document.createElement('input');
     oatCheckbox.type = 'checkbox';
     oatCheckbox.checked = product?.oat_eligible === true;
+
     oatLabel.append(
       oatCheckbox,
       document.createTextNode(' Oat Milk Eligible (+₱30)')
     );
 
-    const actions = element('div', undefined, 'ds-product-form-actions');
+    const actions = element(
+      'div',
+      undefined,
+      'ds-product-form-actions'
+    );
 
     const save = element(
       'button',
       editing ? 'Save Changes' : 'Save Product'
     );
+
     save.type = 'submit';
 
     const cancel = element('button', 'Cancel', 'ghost');
     cancel.type = 'button';
     cancel.onclick = closeForm;
 
-    const feedback = element('p', '', 'ds-product-feedback');
+    const feedback = element(
+      'p',
+      '',
+      'ds-product-feedback'
+    );
+
     feedback.setAttribute('role', 'status');
 
     actions.append(save, cancel);
+
     form.append(
       heading,
       name.label,
@@ -219,6 +262,7 @@
 
     form.onsubmit = async event => {
       event.preventDefault();
+
       if (saving) return;
 
       const newName = name.input.value.trim().replace(/\s+/g, ' ');
@@ -271,26 +315,32 @@
             .from('products')
             .update(values)
             .eq('id', product.id)
-            .select('id');
+            .select('id,product_code');
         } else {
           result = await db
             .from('products')
             .insert({
-  ...values,
-  is_active: true
-})
-            .select('id');
+              ...values,
+              is_active: true
+            })
+            .select('id,product_code');
         }
 
         if (result.error) throw result.error;
+
         if (!result.data?.length) {
-          throw new Error('No product was saved. Check permissions.');
+          throw new Error(
+            'No product was saved. Check permissions.'
+          );
         }
 
         closeForm();
         await loadProducts();
+
       } catch (error) {
-        feedback.textContent = 'Save failed: ' + error.message;
+        feedback.textContent =
+          'Save failed: ' + error.message;
+
       } finally {
         saving = false;
         save.disabled = false;
@@ -303,7 +353,10 @@
     if (saving) return;
 
     const next = !product.is_active;
-    const action = next ? 'Mark Available' : 'Mark Unavailable';
+
+    const action = next
+      ? 'Mark Available'
+      : 'Mark Unavailable';
 
     if (!confirm(`${action}: "${product.name}"?`)) return;
 
@@ -326,12 +379,16 @@
       if (error) throw error;
 
       if (!data?.length) {
-        throw new Error('Product was not updated. Refresh and retry.');
+        throw new Error(
+          'Product was not updated. Refresh and retry.'
+        );
       }
 
       await loadProducts();
+
     } catch (error) {
       alert('Update failed: ' + error.message);
+
     } finally {
       saving = false;
       button.disabled = false;
@@ -339,14 +396,19 @@
   }
 
   addButton.onclick = () => {
-    if (formContainer.hidden) showForm();
-    else closeForm();
+    if (formContainer.hidden) {
+      showForm();
+    } else {
+      closeForm();
+    }
   };
 
   const style = document.createElement('style');
 
   style.textContent = `
-    #addProductButton { margin: 8px 0 18px; }
+    #addProductButton {
+      margin: 8px 0 18px;
+    }
 
     .ds-products-grid {
       display: grid;
@@ -364,7 +426,19 @@
       flex-wrap: wrap;
     }
 
-    .ds-product-card strong { flex: 1 1 160px; }
+    .ds-product-card strong {
+      flex: 1 1 160px;
+    }
+
+    .ds-product-code {
+      color: #806b55;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eee4d8;
+      border-radius: 6px;
+      padding: 4px 8px;
+      letter-spacing: 0.4px;
+    }
 
     .ds-product-detail {
       color: #705f51;
@@ -424,7 +498,9 @@
       margin-bottom: 18px;
     }
 
-    .ds-product-form h3 { margin: 0; }
+    .ds-product-form h3 {
+      margin: 0;
+    }
 
     .ds-product-form-actions {
       display: flex;
