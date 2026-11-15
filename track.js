@@ -196,7 +196,7 @@
       close.disabled = true;
       feedback.textContent = 'Sending cancellation request…';
       try {
-        const response = await fetch(window.DS_SUPABASE_URL + '/functions/v1/request-cancellation', {
+        const response = await fetch(window.DS_SUPABASE_URL + '/functions/v1/request-cancellation-test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
@@ -328,7 +328,7 @@
     }
     busy = true;
     try {
-      const r = await fetch(window.DS_SUPABASE_URL + '/functions/v1/track-order', {
+      const r = await fetch(window.DS_SUPABASE_URL + '/functions/v1/track-order-test', {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({token}), cache:'no-store'
       });
