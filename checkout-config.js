@@ -1,6 +1,8 @@
-// Production site key is public. NEVER paste Turnstile secret or service-role key here.
-// Keep the secret key server-side; do not place secrets in this file.
+
+// Public Turnstile site key only.
+// Never put secret keys in browser files.
+
 window.DS_CHECKOUT = {
-  enabled: true,
+  enabled: false,
   siteKey: '0x4AAAAAAFS4f_m39dQCaE15'
 };
