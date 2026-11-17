@@ -73,15 +73,43 @@
     }
     // Do not destroy a form while the customer is typing during 20-second polling.
     const formKey = data.order_number + ':' + (data.payment_status === 'Paid' ? 'paid' : 'unpaid');
-    if (cancellation.dataset.formKey === formKey && cancellation.childElementCount) return;
-    cancellation.dataset.formKey = formKey;
+    const hasExistingRequest =
+  data.cancellation_request?.status === 'Requested';
+
+const requestConfirmed =
+  hasExistingRequest || cancellationSubmitted;
+
+const requestAlreadyShown =
+  cancellation.dataset.requestShown === 'true';
+
+// Keep the form intact while a submission is in progress.
+if (cancellationPending) return;
+
+// Avoid unnecessary rendering when the displayed state is unchanged.
+if (
+  cancellation.dataset.formKey === formKey &&
+  cancellation.childElementCount &&
+  requestAlreadyShown === requestConfirmed
+) return;
+
+cancellation.dataset.requestShown =
+  requestConfirmed ? 'true' : 'false';
+
+cancellation.dataset.formKey = formKey;
     cancellation.replaceChildren();
     cancellation.append(el('h2', 'Need to cancel your order?'));
     cancellation.append(el('p', 'You can request cancellation before preparation starts. Your order is not cancelled until our team approves it.'));
-    if (cancellationSubmitted) {
-      cancellation.append(el('p', 'Cancellation request sent. Waiting for admin review.'));
-      return;
-    }
+    const existingRequest = data.cancellation_request;
+
+if (
+  cancellationSubmitted ||
+  (existingRequest && existingRequest.status === 'Requested')
+) {
+  cancellation.append(
+    el('p', 'Cancellation request sent. Waiting for admin review.')
+  );
+  return;
+}
     const isPaid = data.payment_status === 'Paid';
     const button = el('button', 'REQUEST CANCELLATION');
     button.type = 'button';
@@ -205,7 +233,8 @@
         const result = await response.json().catch(() => ({}));
         if (!response.ok || result.ok !== true) throw new Error(result.error || 'Could not submit request (' + response.status + ')');
         cancellationSubmitted = true;
-        cancellation.replaceChildren();
+cancellation.dataset.requestShown = 'true';
+cancellation.replaceChildren();
         cancellation.append(el('h2', 'Cancellation request sent'), el('p', 'Waiting for admin review. If approved, our team will contact you to verify refund details before sending any refund.'));
       } catch (error) {
         feedback.textContent = 'Request failed: ' + error.message;
