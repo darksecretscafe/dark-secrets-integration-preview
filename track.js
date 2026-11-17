@@ -164,25 +164,25 @@
     if (cancellationPending) return;
 
     const eligible = ['Pending', 'Accepted'].includes(data.status);
+    const existingRequest = data.cancellation_request;
 
-    if (!eligible) {
+    const requestStatus =
+      existingRequest?.status ||
+      (eligible && cancellationSubmitted ? 'Requested' : '');
+
+    // Existing cancellation records remain visible
+    // even after the order becomes Cancelled.
+    if (!eligible && !requestStatus) {
       cancellation.replaceChildren();
       delete cancellation.dataset.viewKey;
       return;
     }
 
-    const existingRequest = data.cancellation_request;
-
-    const requestStatus =
-      existingRequest?.status ||
-      (cancellationSubmitted ? 'Requested' : '');
-
     const formKey =
       data.order_number + ':' +
       (data.payment_status === 'Paid' ? 'paid' : 'unpaid');
 
-    // Re-render only when the cancellation state changes.
-    // This preserves typed form details during normal polling.
+    // Preserve typed form details during polling.
     const viewKey = formKey + ':' + (requestStatus || 'none');
 
     if (
@@ -204,8 +204,11 @@
         Requested:
           'Cancellation request sent. Waiting for admin review.',
         Approved:
-          'Your cancellation request has been approved. ' +
-          'Please check your order status for updates.',
+          data.payment_status === 'Paid'
+            ? 'Your cancellation request has been approved. ' +
+              'Please check the refund status below.'
+            : 'Your cancellation request has been approved. ' +
+              'No payment is required.',
         Rejected:
           'Your cancellation request was not approved. ' +
           'Please contact support if you need assistance.'
@@ -219,8 +222,8 @@
         )
       );
 
-      // Do not offer another cancellation request when
-      // a cancellation record already exists.
+      // Never offer another cancellation request
+      // while a cancellation record exists.
       return;
     }
 
@@ -689,11 +692,30 @@
       stages.append(li);
     }
 
-    msg.textContent = declined
-      ? 'This order was cancelled or declined. Contact support for assistance.'
-      : idx === -1
-        ? 'Order status is being updated.'
-        : 'Latest status shown below.';
+    // Distinguish approved customer cancellations
+    // from cancelled or declined orders.
+    const cancellationStatus =
+      data.cancellation_request?.status;
+
+    msg.textContent =
+      data.status === 'Cancelled' &&
+      cancellationStatus === 'Approved'
+        ? (
+            data.payment_status === 'Paid'
+              ? 'Your cancellation request was approved. ' +
+                'Please check your refund status below.'
+              : 'Your cancellation request was approved. ' +
+                'No payment is required.'
+          )
+        : data.status === 'Cancelled'
+          ? 'This order was cancelled. ' +
+            'Contact support if you need assistance.'
+          : data.status === 'Declined'
+            ? 'This order was declined. ' +
+              'Contact support for assistance.'
+            : idx === -1
+              ? 'Order status is being updated.'
+              : 'Latest status shown below.';
 
     const verified =
       data.payment_status === 'Paid'
